@@ -34,16 +34,20 @@ export default function App() {
 
     window.electron.ipcRenderer.on('connect-res', (val) => {
       setIsConnected(val as unknown as boolean);
+      setCanConnect(true);
+    });
+
+    window.electron.ipcRenderer.on('disconnect-res', () => {
+      setCanConnect(true);
+      setIsConnected(false);
     });
   }, []);
 
-  if (canConnect) {
-    window.electron.ipcRenderer.disconnectReq();
-  }
-
   return (
     <MyVpnContext.Provider value={{ vpns }}>
-      <MyStatusContext.Provider value={{ isConnected }}>
+      <MyStatusContext.Provider
+        value={{ isConnected, canConnect, setCanConnect }}
+      >
         <Router>
           <Routes>
             <Route path="/" element={<Home />} />

@@ -19,13 +19,15 @@ const RenderVpnTable = () => {
 };
 
 const Home = () => {
-  const { isConnected } = useStatusContext();
+  const { isConnected, canConnect, setCanConnect } = useStatusContext();
 
   const handleClick = () => {
     if (isConnected) {
-      window.electron.ipcRenderer.connectReq();
-    } else {
+      setCanConnect(false);
       window.electron.ipcRenderer.disconnectReq();
+    } else {
+      setCanConnect(false);
+      window.electron.ipcRenderer.connectReq();
     }
     // window.electron.store.set('test-set', 'please');
     // console.log(window.electron.store.get('test-set'));
@@ -38,7 +40,7 @@ const Home = () => {
         <tbody>{RenderVpnTable()}</tbody>
       </table>
       <div className="Hello">
-        <button type="button" onClick={handleClick}>
+        <button type="button" onClick={handleClick} disabled={!canConnect}>
           <span role="img" aria-label="books">
             {isConnected ? 'Disconnect' : 'Connect'}
           </span>

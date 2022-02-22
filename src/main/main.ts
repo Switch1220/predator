@@ -17,6 +17,7 @@ import { io } from 'socket.io-client';
 import { Vpn } from 'renderer/types/Vpn';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import { connectVpn, disconnectVpn } from './vpnConnector';
 
 export default class AppUpdater {
   constructor() {
@@ -38,7 +39,7 @@ ipcMain.on('electron-store-set', async (_event, key, val) => {
   store.set(key, val);
 });
 
-const socket = io('ws://localhost:80');
+const socket = io('ws://192.168.0.195:80');
 
 ipcMain.on('vpn-req', () => {
   socket.emit('vpn-req');
@@ -54,17 +55,32 @@ ipcMain.on('connect-req', () => {
   socket.emit('connect-req');
 });
 
-socket.on('connect-res', (vpn: Vpn) => {
+socket.on('connect-res', async (vpn: Vpn) => {
   // connect logic
+  await connectVpn(vpn);
 
   const { id } = vpn;
   const userInfo = store.get('user-info') ?? socket.id;
-
+  store.set('connected-vpn', id);
   socket.emit('confirm-req', { id, userInfo });
   mainWindow?.webContents.send('connect-res', true);
 });
 
-ipcMain.on('disconnect-req', () => {});
+ipcMain.on('disconnect-req', async () => {
+  const id = store.get('connected-vpn');
+
+  socket.emit('disconnect-req', id);
+});
+
+socket.on('disconnect-res', async (vpn: Vpn) => {
+  // disconnect logic
+  await disconnectVpn(vpn);
+
+  console.log('asdkfj;alkdjsf;akjd');
+
+  store.reset('connected-vpn');
+  mainWindow?.webContents.send('disconnect-res');
+});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');

@@ -9,6 +9,8 @@ type VpnContextType = {
 type StatusContextType = {
   isConnected: boolean;
   setIsConnected?: (status: boolean) => void;
+  canConnect: boolean;
+  setCanConnect: (status: boolean) => void;
 };
 
 export const defaultVpnValue: VpnContextType = {
@@ -19,6 +21,9 @@ export const useVpnContext = () => useContext(MyVpnContext);
 
 export const defaultStatusValue: StatusContextType = {
   isConnected: false,
+  setIsConnected: () => {},
+  canConnect: false,
+  setCanConnect: () => {},
 };
 export const MyStatusContext =
   createContext<StatusContextType>(defaultStatusValue);
