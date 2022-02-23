@@ -7,12 +7,15 @@ import '../App.css';
 
 const RenderVpnTable = () => {
   const { vpns } = useVpnContext();
-  return vpns?.map((vpn) => {
+  return [1 , 2, 3].map((vpn) => {
     return (
-      <tr key={vpn.id} className={vpn.isAvailable ? 'Avail' : 'Unavail'}>
-        <td>{vpn.vpnName}</td>
-        <td>{vpn.vpnAddress}</td>
-        <td>{vpn.userInfo}</td>
+      <tr key={vpn} className={'Avail t-row'}>
+        <td className='t-cell'>dev2 vpn</td>
+        <td className='t-cell'>59.15.3.213</td>
+        <td className='t-cell availability'>
+          <div className='available available--false'></div>
+        </td>
+        <td className='t-cell'>LESRFgHFq8HXCa0HAAAB</td>
       </tr>
     );
   });
@@ -41,8 +44,16 @@ const Home = () => {
   return (
     <div>
       <h1>hi</h1>
-      <table>
-        <tbody>{RenderVpnTable()}</tbody>
+      <table className='table'>
+        <thead className='table__el'>
+          <tr className="t-row">
+            <th className="t-cell">Name</th>
+            <th className="t-cell">Address</th>
+            <th className="t-cell">Available</th>
+            <th className="t-cell">User Info</th>
+          </tr>
+        </thead>
+        <tbody className='table__el'>{RenderVpnTable()}</tbody>
       </table>
       <div className="Hello">
         <button type="button" onClick={handleClick} disabled={!canConnect}>

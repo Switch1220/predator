@@ -9,6 +9,7 @@ import {
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
 import { Vpn } from './types/Vpn';
+import './styles/index.scss';
 
 export default function App() {
   const [vpns, setVpns] = useState<Vpn[] | null>(defaultVpnValue.vpns);
