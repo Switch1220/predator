@@ -9,15 +9,17 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
-import Store from 'electron-store';
-import { io } from 'socket.io-client';
-import { Vpn } from 'renderer/types/Vpn';
+
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import { connectVpn, disconnectVpn } from './vpnConnector';
+
+// Ipc event listener
+import './ipc';
+import SocketProvider from './connector/socket';
+import store from './store';
 
 export default class AppUpdater {
   constructor() {
@@ -28,59 +30,6 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
-
-const store = new Store();
-
-ipcMain.on('electron-store-get', async (event, val) => {
-  event.returnValue = store.get(val);
-});
-
-ipcMain.on('electron-store-set', async (_event, key, val) => {
-  store.set(key, val);
-});
-
-const socket = io('ws://192.168.0.195:80');
-
-ipcMain.on('vpn-req', () => {
-  socket.emit('vpn-req');
-  console.log('sent vpn-req');
-});
-
-socket.on('vpn-res', (vpns: Vpn[]) => {
-  console.log(vpns);
-  mainWindow?.webContents.send('vpn-res', vpns);
-});
-
-ipcMain.on('connect-req', () => {
-  socket.emit('connect-req');
-});
-
-socket.on('connect-res', async (vpn: Vpn) => {
-  // connect logic
-  await connectVpn(vpn);
-
-  const { id } = vpn;
-  const userInfo = store.get('user-info') ?? socket.id;
-  store.set('connected-vpn', id);
-  socket.emit('confirm-req', { id, userInfo });
-  mainWindow?.webContents.send('connect-res', true);
-});
-
-ipcMain.on('disconnect-req', async () => {
-  const id = store.get('connected-vpn');
-
-  socket.emit('disconnect-req', id);
-});
-
-socket.on('disconnect-res', async (vpn: Vpn) => {
-  // disconnect logic
-  await disconnectVpn(vpn);
-
-  console.log('asdkfj;alkdjsf;akjd');
-
-  store.reset('connected-vpn');
-  mainWindow?.webContents.send('disconnect-res');
-});
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -154,6 +103,27 @@ const createWindow = async () => {
   mainWindow.webContents.setWindowOpenHandler((edata) => {
     shell.openExternal(edata.url);
     return { action: 'deny' };
+  });
+
+  const socketUrl =
+    (store.get('socket-url') as string) ?? 'ws://192.168.0.161:80';
+
+  const socketProvider = new SocketProvider(socketUrl, mainWindow, store);
+
+  socketProvider.init();
+
+  ipcMain.on('vpn-req', () => {
+    socketProvider.emit('vpn-req');
+  });
+
+  ipcMain.on('connect-req', () => {
+    socketProvider.emit('connect-req');
+  });
+
+  ipcMain.on('disconnect-req', async () => {
+    const id = store.get('connected-vpn');
+
+    socketProvider.emit('disconnect-req', id);
   });
 
   // Remove this if your app does not use auto updates

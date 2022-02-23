@@ -1,7 +1,7 @@
-import { PowerShell } from 'node-powershell';
+import { InvocationResult, PowerShell } from 'node-powershell';
 import { Vpn } from 'renderer/types/Vpn';
 
-export const connectVpn = async (res: Vpn) => {
+export const connectVpn = async (res: Vpn): Promise<InvocationResult[]> => {
   const vpn = res;
 
   const ps = new PowerShell({
@@ -14,20 +14,20 @@ export const connectVpn = async (res: Vpn) => {
 
   try {
     const simpleCommand = PowerShell.command`
-      $vpnname = ${vpn.vpnName}
-      $vpnaddress = ${vpn.vpnAddress}
-      $vpnusername = ${vpn.vpnUsername}
-      $vpnpassword = ${vpn.vpnPassword}
+      $vpnName = ${vpn.vpnName}
+      $vpnAddress = ${vpn.vpnAddress}
+      $vpnUsername = ${vpn.vpnUsername}
+      $vpnPassword = ${vpn.vpnPassword}
 
-      $vpn = Get-VpnConnection | where {$_.Name -eq $vpnname}
+      $vpn = Get-VpnConnection | where {$_.Name -eq $vpnName}
 
       if ($vpn -eq $null)
       {
-        Add-VpnConnection -Name $vpnname -ServerAddress $vpnaddress
+        Add-VpnConnection -Name $vpnName -ServerAddress $vpnAddress
       }
 
       $cmd = $env:WINDIR + "/System32/rasdial.exe"
-      $expression = "$cmd ""$vpnname"" $vpnusername $vpnpassword"
+      $expression = "$cmd ""$vpnName"" $vpnUsername $vpnPassword"
       Invoke-Expression -Command $expression
     `;
 
@@ -37,10 +37,12 @@ export const connectVpn = async (res: Vpn) => {
   } finally {
     await ps.dispose();
   }
+
+  return ps.history;
 };
 
-export const disconnectVpn = async (res: Vpn) => {
-  const vpn = res;
+export const disconnectVpn = async (res: Vpn): Promise<InvocationResult[]> => {
+  const vpn: Vpn = res;
 
   const ps = new PowerShell({
     debug: true,
@@ -52,19 +54,23 @@ export const disconnectVpn = async (res: Vpn) => {
 
   try {
     const simpleCommand = PowerShell.command`
-      $vpnname = ${vpn.vpnName}
+      $vpnName = ${vpn.vpnName}
 
-      $vpn = Get-VpnConnection -Name $vpnname;
+      $vpn = Get-VpnConnection -Name $vpnName;
 
       if($vpn.ConnectionStatus -eq "Connected"){
         rasdial $vpnName /DISCONNECT;
+      } else {
+        rasdial /DISCONNECT;
       }
     `;
 
     await ps.invoke(simpleCommand);
   } catch (e) {
-    console.log(e);
+    console.error(e);
   } finally {
     await ps.dispose();
   }
+
+  return ps.history;
 };
