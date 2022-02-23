@@ -26,6 +26,11 @@ export default function App() {
       });
 
       setCanConnect(hasAvailableVpn);
+      console.log('iasdf');
+
+      // update res와 vpn res를 분리하여 구현
+      // update <- broadcast
+      // 그리고 sender에게 직접 업데이트된 vpn리스트 전송(setCanConnect 없이)
 
       setVpns(vpnArray);
     });
@@ -38,8 +43,8 @@ export default function App() {
     });
 
     window.electron.ipcRenderer.on('disconnect-res', () => {
-      setCanConnect(true);
       setIsConnected(false);
+      setCanConnect(true);
     });
   }, []);
 

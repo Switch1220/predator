@@ -106,7 +106,7 @@ const createWindow = async () => {
   });
 
   const socketUrl =
-    (store.get('socket-url') as string) ?? 'ws://192.168.0.161:80';
+    (store.get('socketUrl') as string) ?? 'ws://192.168.0.161:80';
 
   const socketProvider = new SocketProvider(socketUrl, mainWindow, store);
 
@@ -121,7 +121,7 @@ const createWindow = async () => {
   });
 
   ipcMain.on('disconnect-req', async () => {
-    const id = store.get('connected-vpn');
+    const id = store.get('connectedVpn');
 
     socketProvider.emit('disconnect-req', id);
   });

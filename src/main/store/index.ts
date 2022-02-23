@@ -1,12 +1,12 @@
 import Store, { Schema } from 'electron-store';
 
-interface IStoreSchema {
-  socket: string;
+export interface IStoreSchema {
+  connectedVpn: string;
 }
 
 const store = new Store<IStoreSchema>({
   defaults: {
-    socket: 'j',
+    connectedVpn: '',
   },
 });
 

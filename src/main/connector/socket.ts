@@ -1,5 +1,6 @@
 import { BrowserWindow } from 'electron';
 import Store from 'electron-store';
+import { IStoreSchema } from 'main/store';
 import { Vpn } from 'renderer/types/Vpn';
 import { io, Socket } from 'socket.io-client';
 import { connectVpn, disconnectVpn } from './vpnConnector';
@@ -9,9 +10,13 @@ export default class SocketProvider {
 
   private mainWindow: BrowserWindow;
 
-  private store: Store;
+  private store: Store<IStoreSchema>;
 
-  constructor(socketUrl: string, mainWindow: BrowserWindow, store: Store) {
+  constructor(
+    socketUrl: string,
+    mainWindow: BrowserWindow,
+    store: Store<IStoreSchema>
+  ) {
     this.socket = io(socketUrl);
     this.mainWindow = mainWindow;
     this.store = store;
@@ -31,8 +36,8 @@ export default class SocketProvider {
       const result = await connectVpn(vpn);
 
       const { id } = vpn;
-      const userInfo = this.store.get('user-info') ?? this.socket.id;
-      this.store.set('connected-vpn', id);
+      const userInfo = this.store.get('userInfo') ?? this.socket.id;
+      this.store.set('connectedVpn', id);
       this.emit('confirm-req', { id, userInfo });
       this.mainWindow.webContents.send('connect-res', true);
       result.forEach((a) => console.log(a));
@@ -42,7 +47,7 @@ export default class SocketProvider {
       // disconnect logic
       await disconnectVpn(vpn);
 
-      this.store.reset('connected-vpn');
+      this.store.reset('connectedVpn');
       this.mainWindow.webContents.send('disconnect-res');
     });
   }

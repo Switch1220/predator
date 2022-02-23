@@ -23,14 +23,19 @@ const Home = () => {
 
   const handleClick = () => {
     if (isConnected) {
-      setCanConnect(false);
+      setCanConnect(!canConnect);
+      console.log(`current: ${canConnect}`);
       window.electron.ipcRenderer.disconnectReq();
     } else {
-      setCanConnect(false);
+      setCanConnect(!canConnect);
       window.electron.ipcRenderer.connectReq();
     }
     // window.electron.store.set('test-set', 'please');
     // console.log(window.electron.store.get('test-set'));
+  };
+
+  const handleCan = () => {
+    setCanConnect(!canConnect);
   };
 
   return (
@@ -44,6 +49,9 @@ const Home = () => {
           <span role="img" aria-label="books">
             {isConnected ? 'Disconnect' : 'Connect'}
           </span>
+        </button>
+        <button type="button" onClick={handleCan}>
+          set can connect!
         </button>
         <Link to="/signup">Sign Up!</Link>
       </div>
