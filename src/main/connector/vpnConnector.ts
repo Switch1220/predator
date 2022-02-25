@@ -1,5 +1,5 @@
 import { InvocationResult, PowerShell } from 'node-powershell';
-import { Vpn } from 'renderer/types/Vpn';
+import { Vpn } from 'common/typings/Vpn';
 
 export const connectVpn = async (res: Vpn): Promise<InvocationResult[]> => {
   const vpn = res;

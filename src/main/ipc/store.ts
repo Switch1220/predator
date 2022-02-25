@@ -9,5 +9,3 @@ ipcMain.on('electron-store-get', async (event, key) => {
 ipcMain.on('electron-store-set', async (_event, key, val) => {
   store.set(key, val);
 });
-
-console.log('form store!!');

@@ -9,17 +9,20 @@
  * `./src/main.js` using webpack. This gives us some performance wins.
  */
 import path from 'path';
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, shell, Tray } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import task from './event';
 
 // Ipc event listener
+import './socket';
 import './ipc';
 import SocketProvider from './connector/socket';
 import store from './store';
+import { getVpns } from './connector/http';
 
 export default class AppUpdater {
   constructor() {
@@ -30,6 +33,7 @@ export default class AppUpdater {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -105,19 +109,49 @@ const createWindow = async () => {
     return { action: 'deny' };
   });
 
-  const socketUrl =
-    (store.get('socketUrl') as string) ?? 'ws://192.168.0.161:80';
+  mainWindow.on('close', (event) => {
+    event.preventDefault();
+    mainWindow?.hide();
+  });
 
-  const socketProvider = new SocketProvider(socketUrl, mainWindow, store);
+  tray = new Tray(getAssetPath('icon.png'));
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'quit',
+      click: () => {
+        mainWindow?.destroy();
+        app.quit();
+      },
+    },
+  ]);
+  tray.setToolTip('predator');
+  tray.setContextMenu(contextMenu);
+  tray.on('click', () => {
+    mainWindow?.show();
+  });
 
-  socketProvider.init();
+  /**
+   * throw error to renderer
+   * @param {string} error msg
+   */
+  task.on('error', (msg: string) => {
+    mainWindow?.webContents.send('error', msg);
+  });
 
-  ipcMain.on('vpn-req', () => {
-    socketProvider.emit('vpn-req');
+  const httpUrl =
+    (store.get('httpUrl') as string) ?? 'http://192.168.0.161:3000';
+
+  ipcMain.on('update', async () => {
+    try {
+      const res = await getVpns(httpUrl);
+    } catch (error) {
+      console.log(error);
+    }
   });
 
   ipcMain.on('connect-req', () => {
-    socketProvider.emit('connect-req');
+    task.emit('get-vpn');
+    // socketProvider.emit('connect-req');
   });
 
   ipcMain.on('disconnect-req', async () => {

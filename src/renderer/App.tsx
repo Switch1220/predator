@@ -8,7 +8,7 @@ import {
 } from './context/GlobalContext';
 import Home from './pages/Home';
 import SignUp from './pages/SignUp';
-import { Vpn } from './types/Vpn';
+import { Vpn } from '../common/typings/Vpn';
 
 export default function App() {
   const [vpns, setVpns] = useState<Vpn[] | null>(defaultVpnValue.vpns);
@@ -26,7 +26,6 @@ export default function App() {
       });
 
       setCanConnect(hasAvailableVpn);
-      console.log('iasdf');
 
       // update res와 vpn res를 분리하여 구현
       // update <- broadcast
@@ -36,6 +35,7 @@ export default function App() {
     });
 
     window.electron.ipcRenderer.vpnReq();
+    setCanConnect(true);
 
     window.electron.ipcRenderer.on('connect-res', (val) => {
       setIsConnected(val as unknown as boolean);

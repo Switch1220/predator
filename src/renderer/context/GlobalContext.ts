@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { Vpn } from 'renderer/types/Vpn';
+import { Vpn } from 'common/typings/Vpn';
 
 type VpnContextType = {
   vpns: Vpn[] | null;
