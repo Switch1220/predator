@@ -15,14 +15,12 @@ import log from 'electron-log';
 
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
-import task from './event';
 
 // Ipc event listener
-import './socket';
-import './ipc';
-import SocketProvider from './connector/socket';
-import store from './store';
-import { getVpns } from './connector/http';
+import { connect } from './connector/connector';
+// import { getVpns } from './connector/http';
+
+import { messenger, logger } from './event-emitter';
 
 export default class AppUpdater {
   constructor() {
@@ -134,31 +132,39 @@ const createWindow = async () => {
    * throw error to renderer
    * @param {string} error msg
    */
-  task.on('error', (msg: string) => {
+  logger.on('error', (msg: string) => {
+    console.log(msg);
     mainWindow?.webContents.send('error', msg);
   });
 
-  const httpUrl =
-    (store.get('httpUrl') as string) ?? 'http://192.168.0.161:3000';
-
-  ipcMain.on('update', async () => {
-    try {
-      const res = await getVpns(httpUrl);
-    } catch (error) {
-      console.log(error);
-    }
+  logger.on('log', (msg: string) => {
+    console.log(msg);
   });
 
-  ipcMain.on('connect-req', () => {
-    task.emit('get-vpn');
-    // socketProvider.emit('connect-req');
-  });
+  messenger.on('');
 
-  ipcMain.on('disconnect-req', async () => {
-    const id = store.get('connectedVpn');
+  await connect();
 
-    socketProvider.emit('disconnect-req', id);
-  });
+  // const httpUrl =
+  //   (store.get('httpUrl') as string) ?? 'http://192.168.0.161:3000';
+
+  // ipcMain.on('update', async () => {
+  //   try {
+  //     const res = await getVpns(httpUrl);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // });
+
+  // ipcMain.on('connect-req', async () => {
+  //   // socketProvider.emit('connect-req');
+  // });
+
+  // ipcMain.on('disconnect-req', async () => {
+  //   const id = store.get('connectedVpn');
+
+  //   socketProvider.emit('disconnect-req', id);
+  // });
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line

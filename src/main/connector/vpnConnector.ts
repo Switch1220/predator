@@ -1,7 +1,7 @@
 import { InvocationResult, PowerShell } from 'node-powershell';
 import { Vpn } from 'common/typings/Vpn';
 
-export const connectVpn = async (res: Vpn): Promise<InvocationResult[]> => {
+export const connectVpn = async (): Promise<InvocationResult[]> => {
   const vpn = res;
 
   const ps = new PowerShell({
@@ -32,12 +32,17 @@ export const connectVpn = async (res: Vpn): Promise<InvocationResult[]> => {
     `;
 
     await ps.invoke(simpleCommand);
-  } catch (e) {
-    console.log(e);
+  } catch (error) {
+    throw new Error(`Could not connect via Powershell: ${error}`);
   } finally {
     await ps.dispose();
   }
 
+  ps.history.forEach((history) => {
+    if (history.hadErrors === true) {
+      throw new Error('Could not cennect to vpn');
+    }
+  });
   return ps.history;
 };
 

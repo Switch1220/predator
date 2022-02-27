@@ -4,7 +4,11 @@ import Store from 'electron-store';
 export interface IStoreSchema {
   httpUrl: string;
   socketUrl: string;
-  connectedVpn: string;
+  isPending: boolean;
+  connectionQueue: Vpn;
+  disconnectionQueue: Vpn;
+  isConnected: boolean;
+  connectedVpn: Vpn;
   vpns: Vpn[];
 }
 
@@ -12,7 +16,11 @@ const store = new Store<IStoreSchema>({
   defaults: {
     httpUrl: '',
     socketUrl: '',
-    connectedVpn: '',
+    isPending: false,
+    connectionQueue: {} as Vpn,
+    disconnectionQueue: {} as Vpn,
+    isConnected: false,
+    connectedVpn: {} as Vpn,
     vpns: [],
   },
 });

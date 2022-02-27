@@ -1,9 +1,9 @@
 import { BrowserWindow } from 'electron';
 import Store from 'electron-store';
-import { IStoreSchema } from 'main/store';
 import { Vpn } from 'common/typings/Vpn';
 import { io, Socket } from 'socket.io-client';
 import { connectVpn, disconnectVpn } from './vpnConnector';
+import { IStoreSchema } from '../store';
 
 export default class SocketProvider {
   private readonly socket: Socket;
