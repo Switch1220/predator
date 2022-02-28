@@ -13,14 +13,17 @@ import { app, BrowserWindow, ipcMain, Menu, shell, Tray } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 
+import store from './store';
+
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 
-// Ipc event listener
-import { connect } from './connector/connector';
-// import { getVpns } from './connector/http';
+import socket from './socket';
 
 import { messenger, logger } from './event-emitter';
+
+import { checkHealth, updateVpns } from './http';
+import { connect, disconnect } from './connector';
 
 export default class AppUpdater {
   constructor() {
@@ -32,6 +35,71 @@ export default class AppUpdater {
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+
+const init = async () => {
+  try {
+    logger.emit('log', 'init...');
+
+    socket.connect();
+
+    await checkHealth();
+    await updateVpns();
+
+    const isFull = store.get('isFull');
+    if (isFull !== undefined) {
+      mainWindow?.webContents.send('event-is-full', isFull);
+    }
+
+    const isConnected = store.get('isConnected');
+    if (isConnected !== undefined) {
+      mainWindow?.webContents.send('event-is-connected', isConnected);
+    }
+  } catch (error) {
+    logger.emit('error', error);
+  }
+};
+
+const registerListeners = async () => {
+  socket.on('connect', () => {
+    const userInfo = store.get('userInfo');
+
+    if (!userInfo) {
+      const socketId = socket.id;
+      store.set('userInfo', socketId);
+
+      logger.emit('Main: set userInfo');
+    }
+  });
+
+  messenger.on('update', () => {
+    const vpns = store.get('vpns');
+    mainWindow?.webContents.send('event-update', vpns);
+  });
+
+  // store.onDidChange('vpns', () => {
+  // });
+
+  store.onDidChange('isFull', () => {
+    const isFull = store.get('isFull');
+    mainWindow?.webContents.send('event-is-full', isFull);
+  });
+
+  store.onDidChange('isPending', (value: boolean | undefined) => {
+    if (value !== undefined) {
+      mainWindow?.webContents.send('event-is-pending', value);
+    }
+  });
+
+  store.onDidChange('isConnected', (value: boolean | undefined) => {
+    if (value !== undefined) {
+      console.log('isconnected triggered');
+      mainWindow?.webContents.send('event-is-connected', value);
+    }
+  });
+
+  ipcMain.on('connect-req', connect);
+  ipcMain.on('disconnect-req', disconnect);
+};
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
@@ -128,25 +196,26 @@ const createWindow = async () => {
     mainWindow?.show();
   });
 
-  /**
-   * throw error to renderer
-   * @param {string} error msg
-   */
-  logger.on('error', (msg: string) => {
-    console.log(msg);
-    mainWindow?.webContents.send('error', msg);
+  mainWindow.once('ready-to-show', async () => {
+    /**
+     * throw error to renderer
+     * @param {string} error msg
+     */
+    logger.on('error', (msg: string) => {
+      console.log(msg);
+      mainWindow?.webContents.send('error', msg);
+    });
+
+    logger.on('log', (msg: string) => {
+      console.log(msg);
+      mainWindow?.webContents.send('log', msg);
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-use-before-define
+    registerListeners();
+
+    await init();
   });
-
-  logger.on('log', (msg: string) => {
-    console.log(msg);
-  });
-
-  messenger.on('');
-
-  await connect();
-
-  // const httpUrl =
-  //   (store.get('httpUrl') as string) ?? 'http://192.168.0.161:3000';
 
   // ipcMain.on('update', async () => {
   //   try {
@@ -181,6 +250,10 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('will-quit', () => {
+  socket.disconnect();
 });
 
 app

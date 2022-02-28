@@ -4,7 +4,6 @@ const SignUp = () => {
   return (
     <div>
       <Link to="/">Home!</Link>
-      <textarea>here</textarea>
     </div>
   );
 };

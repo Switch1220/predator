@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-const validChannels = ['connect-res', 'vpn-res', 'disconnect-res'];
+const validChannels = [
+  'event-update',
+  'event-is-pending',
+  'event-is-connected',
+  'connect-res',
+  'disconnect-res',
+];
 
 contextBridge.exposeInMainWorld('electron', {
   store: {
